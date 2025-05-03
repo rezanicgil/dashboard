@@ -1,23 +1,38 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+// Yardımcı fonksiyon: Yanıtı HTML olarak işlemek
+const formatResponse = (response: string) => {
+  if (!response) return ''; // Null veya undefined kontrolü
+
+  // **metin** ifadelerini <strong> ile değiştir
+  let formatted = response.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // \n karakterlerini <br> ile değiştir
+  formatted = formatted.replace(/\n/g, '<br>');
+
+  return formatted;
+};
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false); // Loader durumu
+  const [loading, setLoading] = useState<boolean>(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setResponse(null);
-    setLoading(true); // Loader'ı başlat
+    setLoading(true);
 
     if (!file) {
       setError('Please upload a file.');
-      setLoading(false); // Loader'ı durdur
+      setLoading(false);
       return;
     }
 
@@ -26,10 +41,9 @@ export default function HomePage() {
       formData.append('file', file);
       formData.append('prompt', prompt);
 
-      const token = localStorage.getItem('accessToken'); // Token'ı localStorage'dan al
+      const token = localStorage.getItem('accessToken');
       if (!token) {
-        setError('Authorization token is missing.');
-        setLoading(false); // Loader'ı durdur
+        router.push('/login'); 
         return;
       }
 
@@ -41,21 +55,49 @@ export default function HomePage() {
         body: formData,
       });
 
+      if (res.status === 401) {
+        localStorage.removeItem('accessToken');
+        router.push('/login');
+        return;
+      }
+
       if (!res.ok) {
         throw new Error('Failed to generate content.');
       }
 
+
       const data = await res.json();
-      setResponse(data.content.replace(/\n/g, '<br>')); // Yanıtı işleyip <br> ile değiştir
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong.');
+      setResponse(formatResponse(data.content || '')); // Yanıtı işleyip HTML formatına dönüştür
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else {
+        setError('Something went wrong.');
+      }
     } finally {
-      setLoading(false); // Loader'ı durdur
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 relative">
+      {/* Prompt Display */}
+      {prompt && (
+        <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-gray-300">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-800 text-sm">{prompt}</span>
+            <button
+              onClick={() => setPrompt('')}
+              className="ml-4 text-gray-500 hover:text-red-500 transition"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-2xl p-8 bg-white rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">
           Ross AI
@@ -111,7 +153,7 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-gray-800">Response:</h2>
             <div
               className="mt-2 p-4 bg-gray-100 rounded-lg text-sm text-gray-800 overflow-auto"
-              dangerouslySetInnerHTML={{ __html: response }} // HTML olarak render et
+              dangerouslySetInnerHTML={{ __html: response }}
             ></div>
           </div>
         )}

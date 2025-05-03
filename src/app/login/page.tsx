@@ -29,12 +29,24 @@ export default function LoginPage() {
       const data = await response.json();
       const { accessToken } = data;
 
-      // Token'ı çerez olarak kaydet
-      document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; secure; samesite=strict`;
+      if (!accessToken) {
+        throw new Error('Access token is missing.');
+      }
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+        document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; secure; samesite=strict`;
 
-      router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+        console.log('Redirecting...');
+        router.push('/');
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else {
+      setError('Something went wrong');
+      }
     }
   };
 
