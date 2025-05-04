@@ -46,8 +46,9 @@ export default function HomePage() {
         router.push('/login'); 
         return;
       }
+      
 
-      const res = await fetch('https://20250505t003525-dot-intense-slice-458811-c9.ew.r.appspot.com/gemini/generate-content', {
+      const res = await fetch('https://20250505t010008-dot-intense-slice-458811-c9.ew.r.appspot.com/gemini/generate-content', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
