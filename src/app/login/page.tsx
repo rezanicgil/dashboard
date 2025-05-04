@@ -14,7 +14,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8080/auth/login', {
+      const response = await fetch('https://20250505t003525-dot-intense-slice-458811-c9.ew.r.appspot.com/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
